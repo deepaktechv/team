@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Hierarchy Visualization</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7f9;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .org-tree {
+            width: 100%;
+            height: 750px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 0;
+            padding-top: 0;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node circle {
+            fill: #fff;
+            stroke: #4682b4;
+            stroke-width: 2px;
+        }
+        .node text {
+            font-size: 12px;
+            font-family: 'Arial', sans-serif;
+        }
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+        .top-level {
+            fill: #3498db;
+            stroke: #2980b9;
+        }
+        .second-level {
+            fill: #2ecc71;
+            stroke: #27ae60;
+        }
+        .third-level {
+            fill: #e74c3c;
+            stroke: #c0392b;
+        }
+        .fourth-level {
+            fill: #f39c12;
+            stroke: #d35400;
+        }
+        .fifth-level {
+            fill: #9b59b6;
+            stroke: #8e44ad;
+        }
+        .node-label {
+            font-size: 14px;
+            font-weight: 500;
+            fill: #333;
+        }
+        .top-level-label {
+            font-weight: bold;
+            font-size: 16px;
+            fill: #000;
+        }
+        .node-box {
+            fill: rgba(255, 255, 255, 0.8);
+            stroke: none;
+            rx: 4;
+            ry: 4;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: #4682b4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3a6d99;
+        }
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .fullscreen-btn {
+            background-color: #e74c3c;
+        }
+        .fullscreen-btn:hover {
+            background-color: #c0392b;
+        }
+        .exit-fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #e74c3c;
+            display: none;
+        }
+        .toggle-controls-btn {
+            position: absolute;
+            top: 10px;
+            right: 150px;
+            background-color: #3498db;
+            z-index: 9999;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Team Hierarchy Visualization</h1>
+
+        <div class="controls">
+            <button id="expandAll">Expand All</button>
+            <button id="collapseAll">Collapse All</button>
+            <button id="zoomIn">Zoom In</button>
+            <button id="zoomOut">Zoom Out</button>
+            <button id="resetZoom">Reset View</button>
+            <button id="fullscreenBtn" class="fullscreen-btn">Full Screen</button>
+            <button id="exitFullscreenBtn" class="exit-fullscreen-btn">Exit Full Screen</button>
+        </div>
+        
+        <button id="toggleControlsBtn" class="toggle-controls-btn">Hide Controls</button>
+
+        <div id="tree-container" class="org-tree"></div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Define the data
+        const data = {
+            "name": "Deepak Jose",
+            "children": [
+                { "name": "Archana Nagarajan" },
+                {
+                    "name": "Aswathy S",
+                    "children": [
+                        {
+                            "name": "Abhijith A",
+                            "children": [
+                                { "name": "Anand Vishnu" },
+                                { "name": "Anisree S S" },
+                                { "name": "Anujith S" },
+                                { "name": "Aswin K S" },
+                                { "name": "Krishna Renjith" }
+                            ]
+                        },
+                        { "name": "Majes George" },
+                        {
+                            "name": "Sreedevi KK",
+                            "children": [
+                                { "name": "Anchu Babu" },
+                                { "name": "Rini Nelson L N" }
+                            ]
+                        },
+                        {
+                            "name": "Vishnu Jayakumar",
+                            "children": [
+                                {
+                                    "name": "Midhun M",
+                                    "children": [
+                                        { "name": "Eeva E P" },
+                                        { "name": "Shyamsundar P S" }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "B Anoop Ben",
+                    "children": [
+                        { "name": "Anju Mary Paul" },
+                        { "name": "Sonu Raju" },
+                        { "name": "Vishnu Pramod Mv" }
+                    ]
+                },
+                {
+                    "name": "Binod Manikalathil",
+                    "children": [
+                        { "name": "Jithin Joy" },
+                        { "name": "Parikshith M" }
+                    ]
+                },
+                {
+                    "name": "Binoy Dominic P",
+                    "children": [
+                        {
+                            "name": "Abhijai K P",
+                            "children": [
+                                { "name": "Abhijith Naiju" },
+                                { "name": "Ebin Shaji" }
+                            ]
+                        },
+                        { "name": "Anoop Joy" },
+                        {
+                            "name": "Aswin Sanjith",
+                            "children": [
+                                { "name": "Sam Isaac S P" },
+                                { "name": "Shreyas A S" }
+                            ]
+                        },
+                        {
+                            "name": "Ranimol K R",
+                            "children": [
+                                { "name": "Amritha A R" }
+                            ]
+                        },
+                        {
+                            "name": "Sabareesh R S",
+                            "children": [
+                                { "name": "C. Sathish Kumar" },
+                                { "name": "Jibin Varghese" }
+                            ]
+                        },
+                        { "name": "Shihabuddin A H" }
+                    ]
+                },
+                {
+                    "name": "Lallu Prakash",
+                    "children": [
+                        { "name": "Deepthi Joy" },
+                        { "name": "Gayathrimol G" }
+                    ]
+                },
+                { "name": "Tony Jose" },
+                {
+                    "name": "Vishnu CS",
+                    "children": [
+                        { "name": "Adarsh U S" },
+                        { "name": "Gosal Ram S G" }
+                    ]
+                }
+            ]
+        };
+
+        // Set up the D3 visualization
+        const margin = {top: 10, right: 120, bottom: 50, left: 120};
+        const width = 1800 - margin.left - margin.right;
+        const height = 800 - margin.top - margin.bottom;
+
+        let i = 0;
+        let duration = 750;
+        let root;
+        let zoom = d3.zoom()
+            .scaleExtent([0.2, 3])
+            .on("zoom", function(event) {
+                g.attr("transform", event.transform);
+            });
+
+        const svg = d3.select("#tree-container").append("svg")
+            .attr("width", "100%")
+            .attr("height", height + margin.top + margin.bottom)
+            .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+
+        // Create a separate g for zoom
+        const zoomG = svg.append("g");
+        
+        // Add a background rectangle for better zooming interaction
+        zoomG.append("rect")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .attr("fill", "white")
+            .attr("opacity", 0.01);
+
+        // Apply zoom to SVG
+        svg.call(zoom);
+        
+        // Add controls for panning
+        const controls = document.createElement('div');
+        controls.className = 'pan-controls';
+        controls.style.position = 'absolute';
+        controls.style.top = '10px';
+        controls.style.right = '10px';
+        controls.style.zIndex = '1000';
+        document.getElementById('tree-container').appendChild(controls);
+
+        const g = zoomG.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Increase node spacing
+        const tree = d3.tree().size([height, width]).separation((a, b) => {
+            return a.parent === b.parent ? 1.5 : 2;
+        });
+
+        // Create the visualization
+        function update(source) {
+            // Assigns the x and y position for the nodes
+            const treeData = tree(root);
+            
+            // Compute the new tree layout
+            const nodes = treeData.descendants();
+            const links = treeData.links();
+
+            // Normalize for fixed-depth
+            nodes.forEach(d => {
+                d.y = d.depth * 280; // Increased horizontal spacing
+            });
+
+            // Update the nodes
+            const node = g.selectAll('g.node')
+                .data(nodes, d => d.id || (d.id = ++i));
+
+            // Enter any new nodes at the parent's previous position
+            const nodeEnter = node.enter().append('g')
+                .attr('class', 'node')
+                .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                .on('click', function(event, d) {
+                    // Fixed event handling for D3v7
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update(d);
+                });
+
+            // Add Circle for the nodes
+            nodeEnter.append('circle')
+                .attr('r', 12) // Bigger circles
+                .attr('class', d => {
+                    if (d.depth === 0) return 'top-level';
+                    if (d.depth === 1) return 'second-level';
+                    if (d.depth === 2) return 'third-level';
+                    if (d.depth === 3) return 'fourth-level';
+                    return 'fifth-level';
+                });
+
+            // Add background for text labels to improve readability
+            nodeEnter.append('rect')
+                .attr('class', 'node-box')
+                .attr('x', d => d.children || d._children ? -8 - getTextWidth(d.data.name) : 15)
+                .attr('y', -10)
+                .attr('width', d => getTextWidth(d.data.name) + 10)
+                .attr('height', 20);
+
+            // Add labels for the nodes
+            nodeEnter.append('text')
+                .attr("dy", ".35em")
+                .attr("x", d => d.children || d._children ? -15 : 20)
+                .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                .text(d => d.data.name)
+                .attr('class', d => d.depth === 0 ? 'top-level-label' : 'node-label');
+
+            // UPDATE
+            const nodeUpdate = nodeEnter.merge(node);
+
+            // Transition to the proper position for the node
+            nodeUpdate.transition()
+                .duration(duration)
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+
+            // Update the node attributes and style
+            nodeUpdate.select('circle')
+                .attr('r', 12) // Match the circle size
+                .attr('cursor', 'pointer');
+
+            // Remove any exiting nodes
+            const nodeExit = node.exit().transition()
+                .duration(duration)
+                .attr("transform", d => `translate(${source.y},${source.x})`)
+                .remove();
+
+            // On exit reduce the node circles size to 0
+            nodeExit.select('circle')
+                .attr('r', 1e-6);
+
+            // On exit reduce the opacity of text labels
+            nodeExit.select('text')
+                .style('fill-opacity', 1e-6);
+
+            // Update the links
+            const link = g.selectAll('path.link')
+                .data(links, d => d.target.id);
+
+            // Enter any new links at the parent's previous position
+            const linkEnter = link.enter().insert('path', "g")
+                .attr("class", "link")
+                .attr('d', d => {
+                    const o = {x: source.x0, y: source.y0};
+                    return diagonal(o, o);
+                });
+
+            // UPDATE
+            const linkUpdate = linkEnter.merge(link);
+
+            // Transition back to the parent element position
+            linkUpdate.transition()
+                .duration(duration)
+                .attr('d', d => diagonal(d.source, d.target));
+
+            // Remove any exiting links
+            link.exit().transition()
+                .duration(duration)
+                .attr('d', d => {
+                    const o = {x: source.x, y: source.y};
+                    return diagonal(o, o);
+                })
+                .remove();
+
+            // Store the old positions for transition
+            nodes.forEach(d => {
+                d.x0 = d.x;
+                d.y0 = d.y;
+            });
+        }
+
+        // Creates a curved path from parent to the child nodes
+        function diagonal(s, d) {
+            const path = `M ${s.y} ${s.x}
+                    C ${(s.y + d.y) / 2} ${s.x},
+                      ${(s.y + d.y) / 2} ${d.x},
+                      ${d.y} ${d.x}`;
+            return path;
+        }
+
+        // Collapse the node and all its children
+        function collapse(d) {
+            if (d.children) {
+                d._children = d.children;
+                d._children.forEach(collapse);
+                d.children = null;
+            }
+        }
+
+        function expandAll() {
+            expandRecursive(root);
+            update(root);
+        }
+
+        function expandRecursive(d) {
+            if (d._children) {
+                d.children = d._children;
+                d._children = null;
+            }
+            
+            if (d.children) {
+                d.children.forEach(expandRecursive);
+            }
+        }
+
+        function expand(d) {
+            if (d._children) {
+                d.children = d._children;
+                d._children = null;
+                d.children.forEach(expand);
+            }
+        }
+
+        function collapseAll() {
+            root.children.forEach(collapse);
+            update(root);
+        }
+
+        function zoomIn() {
+            svg.transition()
+                .duration(duration)
+                .call(zoom.scaleBy, 1.2);
+        }
+
+        function zoomOut() {
+            svg.transition()
+                .duration(duration)
+                .call(zoom.scaleBy, 0.8);
+        }
+
+        function resetZoom() {
+            svg.transition()
+                .duration(duration)
+                .call(zoom.transform, d3.zoomIdentity.translate(margin.left, margin.top));
+        }
+
+        // Helper function to estimate text width (since we don't have DOM access in this context)
+        function getTextWidth(text) {
+            return text.length * 8; // rough estimate
+        }
+
+        // Initialize the display
+        root = d3.hierarchy(data);
+        root.x0 = height / 2;
+        root.y0 = 0;
+
+        // Start with everything expanded instead of collapsed
+        expandRecursive(root);
+
+        update(root);
+
+        // Set up button event handlers
+        document.getElementById('expandAll').addEventListener('click', expandAll);
+        document.getElementById('collapseAll').addEventListener('click', collapseAll);
+        document.getElementById('zoomIn').addEventListener('click', zoomIn);
+        document.getElementById('zoomOut').addEventListener('click', zoomOut);
+        document.getElementById('resetZoom').addEventListener('click', resetZoom);
+        
+        // Add fullscreen functionality
+        const container = document.querySelector('.container');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
+        const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+        const controlsDiv = document.querySelector('.controls');
+        const heading = document.querySelector('h1');
+        
+        // Toggle controls visibility
+        toggleControlsBtn.addEventListener('click', function() {
+            if (controlsDiv.classList.contains('hidden')) {
+                controlsDiv.classList.remove('hidden');
+                heading.classList.remove('hidden');
+                toggleControlsBtn.textContent = 'Hide Controls';
+                // Adjust SVG height to account for controls
+                svg.attr("height", window.innerHeight - 150);
+            } else {
+                controlsDiv.classList.add('hidden');
+                heading.classList.add('hidden');
+                toggleControlsBtn.textContent = 'Show Controls';
+                // Maximize SVG height when controls are hidden
+                svg.attr("height", window.innerHeight - 50);
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', function() {
+            container.classList.add('fullscreen');
+            fullscreenBtn.style.display = 'none';
+            exitFullscreenBtn.style.display = 'inline-block';
+            
+            // Resize and recenter when entering fullscreen
+            svg.attr("width", "100%")
+               .attr("height", window.innerHeight - 150);
+            
+            // Reset zoom to show everything
+            resetZoom();
+        });
+        
+        exitFullscreenBtn.addEventListener('click', function() {
+            container.classList.remove('fullscreen');
+            fullscreenBtn.style.display = 'inline-block';
+            exitFullscreenBtn.style.display = 'none';
+            
+            // Restore original size
+            svg.attr("width", "100%")
+               .attr("height", height + margin.top + margin.bottom);
+            
+            // Reposition
+            initialPosition();
+        });
+        
+        // Add help text for navigation
+        const helpText = document.createElement('div');
+        helpText.style.marginTop = '5px';
+        helpText.style.marginBottom = '5px';
+        helpText.style.fontSize = '13px';
+        helpText.style.color = '#666';
+        helpText.innerHTML = '<p style="margin: 5px 0"><strong>Navigation:</strong> Click and drag to pan, use buttons to zoom in/out.</p>';
+        document.querySelector('.controls').appendChild(helpText);
+        
+        // Initial transform to position the visualization like in the first image
+        function initialPosition() {
+            // Scale down slightly and position to show more nodes
+            const initialScale = 0.8;
+            const initialX = width / 3; // Position between center and left
+            const initialY = -30; // Negative value to move higher up
+            
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, 
+                    d3.zoomIdentity
+                        .translate(initialX, initialY)
+                        .scale(initialScale)
+                );
+        }
+        
+        // Call initial position instead of resetZoom
+        initialPosition();
+
+        // Add additional zoom and pan functionality
+        function disableMousewheelZoom() {
+            svg.on("wheel.zoom", null);
+        }
+        
+        function enableMousewheelZoom() {
+            svg.call(zoom);
+        }
+
+        // Auto-trigger fullscreen mode after page load
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // Trigger fullscreen programmatically
+                container.classList.add('fullscreen');
+                fullscreenBtn.style.display = 'none';
+                exitFullscreenBtn.style.display = 'inline-block';
+                
+                // Resize and recenter when entering fullscreen
+                svg.attr("width", "100%")
+                   .attr("height", window.innerHeight - 150);
+                
+                // Reset zoom to show everything
+                resetZoom();
+            }, 500); // Short delay to ensure everything is loaded
+        });
+    </script>
+</body>
+</html> 
